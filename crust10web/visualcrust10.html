@@ -1,0 +1,522 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<meta http-equiv="X-UA-Compatible" content="IE=9;text/html; charset=utf-8">
+
+<head>
+   
+   <!--<meta http-equiv="cache-control" content="no-cache"/>  -->
+
+    <title>VisualCrust: Visualizing the Global Crustal Structure</title>
+    <script type="text/javascript" src="http://www.google.com/jsapi?&key=AIzaSyDVvQZDhBUb0BSIxQRNWXiPtpnbZGmBJ4Q"></script>
+    <script type="text/javascript" src="UpliftKML.js" ></script>
+    <style type="text/css">
+         html,body{height:100%; width:100%; overflow:hidden; margin:0px; padding:0;font-family:Times New Roman;}
+        #mainhead{width:100%; height:60px; padding:0px;margin-bottom:0px;}
+		#head{width:100%; height:60px; padding:0px;margin-bottom:0px;margin-left:5px;}
+		#main{width:100%; height:100%; overflow:hidden; margin-top: 15px;margin-bottom:15px; position:relative;}
+        #map3d{width:100%; height:87%;margin-left:5px;margin-right:5px;border: 1px solid silver;}
+</style>
+    <script type="text/javascript">
+        var Addlayer = new Array();
+        var Slider_Altitude;
+        var Slider_AltBar;
+        var Slider_AltBarActive;
+        var sliderUp;
+        var timer = null;
+        var leftUp = 80;
+        var ge;
+        var networkLink1;
+
+        google.load('earth', '1', { 'language': 'en' });
+        function init() {
+            google.earth.createInstance('map3d', initCB, failureCB);
+        }
+
+        function initCB(instance) {
+            ge = instance;
+            ge.getWindow().setVisibility(true);
+            ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+                         
+            ge.getOptions().setGridVisibility(true);
+            ge.getOptions().setScaleLegendVisibility(true); 
+            ge.getOptions().setStatusBarVisibility(true);
+            ge.getOptions().setOverviewMapVisibility(true);
+
+            //添加图例
+            var legend = ge.createScreenOverlay('');
+            var Icon = ge.createIcon('');
+            Icon.setHref('http://www.visualearth.org/globalcrust10/crust10web/img/crustLegend.png');
+            legend.setIcon(Icon);
+            legend.getOverlayXY().setXUnits(ge.UNITS_PIXELS);
+            legend.getOverlayXY().setYUnits(ge.UNITS_INSET_PIXELS);
+            legend.getOverlayXY().setX(0);
+            legend.getOverlayXY().setY(0);
+            legend.getScreenXY().setXUnits(ge.UNITS_PIXELS);
+            legend.getScreenXY().setYUnits(ge.UNITS_INSET_PIXELS);
+            legend.getScreenXY().setX(0);
+            legend.getScreenXY().setY(0);
+            ge.getFeatures().appendChild(legend);
+
+          
+              var href = 'http://www.visualearth.org/globalcrust10/crustalmodel/crust10.kml';
+           
+
+          
+
+            
+            var link1;
+             
+            link1 = ge.createLink('');
+	    link1.setHref(href);
+	    networkLink1 = ge.createNetworkLink('');
+	    networkLink1.set(link1, true, true);
+	    ge.getFeatures().appendChild(networkLink1);
+
+
+            var screenhref0='http://www.visualearth.org/globalcrust10/crust10web/img/add.png';
+            Addlayer[0] = AddIconScreen(screenhref0,10, 43, false);
+            Addlayer[1] = AddIconScreen(screenhref0,10, 75, false);
+            Addlayer[2] = AddIconScreen(screenhref0,10, 109, false);
+            Addlayer[3] = AddIconScreen(screenhref0,10, 142, false);
+            Addlayer[4] = AddIconScreen(screenhref0,10, 176, false);
+            Addlayer[5] = AddIconScreen(screenhref0,10, 209, false);
+            Addlayer[6] = AddIconScreen(screenhref0,10, 242, false);
+            Addlayer[7] = AddIconScreen(screenhref0, 10, 275, false);
+            var Altitude_bgHref =  'http://www.visualearth.org/globalcrust10/crust10web/img/altitudebg.png';
+            var Altitude_barHref = 'http://www.visualearth.org/globalcrust10/crust10web/img/bar.png';
+            Slider_Altitude = AddIconScreen(Altitude_bgHref, 25, 370, true);
+            Slider_AltBar = AddIconScreen(Altitude_barHref, 42, 398, true);
+            google.earth.addEventListener(ge.getWindow(), 'click', clickEvent);
+            //viewchange 事件；实现分层控制
+            google.earth.addEventListener(ge.getView(), 'viewchangeend', ViewchangeEnd);
+            //竖直方向滑动条事件
+            google.earth.addEventListener(ge.getWindow(), 'mousedown', SliderMouseDown);
+            google.earth.addEventListener(ge.getWindow(), 'mouseup', SliderMouseUp);
+            google.earth.addEventListener(ge.getWindow(), 'mousemove', SliderMouseMove);
+            google.earth.addEventListener(ge.getWindow(), 'mousemove', Slider_FocusedEvent);
+        }
+
+       
+
+        function failureCB(errorCode) 
+        {
+        }
+
+        google.setOnLoadCallback(init);
+
+
+        //添加Add layer 图标函数
+        function AddIconScreen(screenhref,x, y,vis) {
+            var AddScreen = ge.createScreenOverlay('');
+            var AddIcon = ge.createIcon('');
+            AddIcon.setHref(screenhref);
+            AddScreen.setIcon(AddIcon);
+            AddScreen.getOverlayXY().setXUnits(ge.UNITS_PIXELS);
+            AddScreen.getOverlayXY().setYUnits(ge.UNITS_INSET_PIXELS);
+            AddScreen.getOverlayXY().setX(x);
+            AddScreen.getOverlayXY().setY(y);
+            AddScreen.getScreenXY().setXUnits(ge.UNITS_PIXELS);
+            AddScreen.getScreenXY().setYUnits(ge.UNITS_INSET_PIXELS);
+            AddScreen.getScreenXY().setX(0);
+            AddScreen.getScreenXY().setY(0);
+            ge.getFeatures().appendChild(AddScreen);
+            AddScreen.setVisibility(vis);
+            return AddScreen;
+        }
+        //单击图例时的响应函数
+        var clickEvent = function (event) {
+            //layer1 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 45 && event.getClientY() < 65) {
+                event.preventDefault();
+                var visi1 = Addlayer[0].getVisibility();
+                Addlayer[0].setVisibility(!visi1);
+                var layer1 = null;
+                layer1 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer1.getLength(); i++) {
+                    var cell1 = layer1.item(i);
+                    cell1.getFeatures().getFirstChild().setVisibility(visi1);
+                }
+            }
+            //layer2 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 75 && event.getClientY() < 95) {
+                event.preventDefault();
+                var visi2 = Addlayer[1].getVisibility();
+                Addlayer[1].setVisibility(!visi2);
+                var layer2 = null;
+                layer2 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer2.getLength(); i++) {
+                    var cell2 = layer2.item(i);
+                    cell2.getFeatures().getChildNodes().item(1).setVisibility(visi2);
+                }
+            }
+            //layer3 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 112 && event.getClientY() < 130) {
+                event.preventDefault();
+                var visi3 = Addlayer[2].getVisibility();
+                Addlayer[2].setVisibility(!visi3);
+                var layer3 = null;
+                layer3 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer3.getLength(); i++) {
+                    var cell3 = layer3.item(i);
+                    cell3.getFeatures().getChildNodes().item(2).setVisibility(visi3);
+                }
+            }
+            //layer4 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 145 && event.getClientY() < 163) {
+                event.preventDefault();
+                var visi4 = Addlayer[3].getVisibility();
+                Addlayer[3].setVisibility(!visi4);
+                var layer4 = null;
+                layer4 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer4.getLength(); i++) {
+                    var cell4 = layer4.item(i);
+                    cell4.getFeatures().getChildNodes().item(3).setVisibility(visi4);
+                }
+            }
+            //layer5 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 178 && event.getClientY() < 195) {
+                event.preventDefault();
+                var visi5 = Addlayer[4].getVisibility();
+                Addlayer[4].setVisibility(!visi5);
+                var layer5 = null;
+                layer5 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer5.getLength(); i++) {
+                    var cell5 = layer5.item(i);
+                    cell5.getFeatures().getChildNodes().item(4).setVisibility(visi5);
+                }
+            }
+            //layer6 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 213 && event.getClientY() < 230) {
+                event.preventDefault();
+                var visi6 = Addlayer[5].getVisibility();
+                Addlayer[5].setVisibility(!visi6);
+                var layer6 = null;
+                layer6 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer6.getLength(); i++) {
+                    var cell6 = layer6.item(i);
+                    cell6.getFeatures().getChildNodes().item(5).setVisibility(visi6);
+                }
+            }
+            //layer7 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 245 && event.getClientY() < 262) {
+                event.preventDefault();
+                var visi7 = Addlayer[6].getVisibility();
+                Addlayer[6].setVisibility(!visi7);
+                var layer7 = null;
+                layer7 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer7.getLength(); i++) {
+                    var cell7 = layer7.item(i);
+                    cell7.getFeatures().getChildNodes().item(6).setVisibility(visi7);
+                }
+            }
+            //layer8 click
+            if (event.getClientX() > 5 && event.getClientX() < 45 && event.getClientY() > 278 && event.getClientY() < 297) {
+                event.preventDefault();
+                var visi8 = Addlayer[7].getVisibility();
+                Addlayer[7].setVisibility(!visi8);
+                var layer8 = null;
+                layer8 = ge.getElementsByType("KmlDocument");
+                for (var i = 0; i < layer8.getLength(); i++) {
+                    var cell8 = layer8.item(i);
+                    cell8.getFeatures().getChildNodes().item(7).setVisibility(visi8);
+                }
+            }
+        }
+        //Slider Focused 函数
+        var Slider_FocusedEvent = function (event) {
+            if (event.getClientX() > 15 && event.getClientX() < 90 && event.getClientY() > 350 && event.getClientY() < 550) {
+
+                Slider_Altitude.setOpacity(0.9);
+                Slider_AltBar.setOpacity(0.9);
+            }
+            else {
+                Slider_Altitude.setOpacity(0.5);
+                Slider_AltBar.setOpacity(0.5);
+            }
+        };
+
+        //viewchangeend函数
+        ViewchangeEnd = function () 
+        { 
+            var num = ge.getElementsByType("KmlDocument").getLength();
+            if (timer) 
+            {
+                clearTimeout(timer);
+            }
+            
+            if ( num > 0 ) 
+            {
+                timer = setTimeout(refreshCrust, 1000);
+            }
+        }
+
+        var refreshCrust = function () 
+        {
+            var kmlobject = ge.getElementsByType("KmlDocument"); //获得所有的地壳单元
+
+            for (var i = 0; i < kmlobject.getLength(); i++) 
+            {
+                var crustcell = kmlobject.item(i); //得到每个地壳单元
+                var childs = crustcell.getFeatures().getChildNodes(); //获取地壳的每层KML要素
+                for (var j = 0; j < 8; j++) 
+                {
+                   //依次遍历每层地壳信息，设置其可见性
+                    var visi = Addlayer[j].getVisibility();
+                    var child = childs.item( j );
+                    child.setVisibility( !visi );
+                }
+            }
+            //根据uplift及滑块位置移动KML
+            if (Slider_AltBar.getOverlayXY().getY() != 398) 
+            {
+                Uplift();
+            }
+        }
+
+        //抬升按钮的事件函数;按钮已注释掉了//抬升函数，根据snippet中的抬升高度确定抬升距离
+        
+        var Uplift = function () 
+        {
+             var crustcell;
+             var snippet;
+             var uplift;
+             var newsnippet;
+             var cellnum;
+             var sliderUp ;
+             var lift;
+
+             cellnum  = ge.getElementsByType("KmlDocument").getLength();
+             sliderUp = parseInt((526 - Slider_AltBar.getOverlayXY().getY()) / 160 * 100);
+             if ( cellnum > 0 ) 
+             {
+                var crustcells = ge.getElementsByType("KmlDocument"); //获得所有的地壳单元
+                var i = 0;
+
+                // for (var i = 0; i < crustcells.getLength(); i++) 
+                for ( i = crustcells.getLength()-1; i >= 0; i--) 
+                {
+                     crustcell = crustcells.item(i);
+                     snippet   = parseInt(crustcell.getSnippet().split('=')[1]);
+                     uplift    = sliderUp - snippet;
+                     lift      = uplift * 1000;
+                    //  alert("xx");
+                     
+                     if (uplift != 0) 
+                     {
+                         newsnippet = "uplift =" + sliderUp;
+                         crustcell.setSnippet(newsnippet);
+                         var nodes = crustcell.getFeatures().getChildNodes(); //获取地壳的每层KML要素
+                         var j=0;
+                         
+                         if (uplift > 0)
+                         {
+                              for ( j = 0; j < nodes.getLength(); j++)                                                   
+                              {
+                                var node = nodes.item(j);                                                       
+                                UpliftCrustcells(node, lift);                            
+                              }
+                          }
+                         else
+                          {                             
+                              for ( j = nodes.getLength()-1; j >= 0; j--) 
+                              {
+                                var node = nodes.item(j);                                                       
+                                UpliftCrustcells(node, lift);                            
+                              }
+
+                           }                        
+                        
+                    }
+                }
+            }
+        }
+
+        //竖直方向抬升的屏幕叠加层mousedown事件
+        var SliderMouseDown = function (event) 
+        {
+            // alert("mouse down 1");
+            if (event.getClientX() > 42 && event.getClientX() < 60 && event.getClientY() > 360 && event.getClientY() < 540) {
+                event.preventDefault();
+                Slider_AltBarActive = true;//激活滑动条
+                 //alert("激活 地壳 ");
+
+                var clientY;
+                if (event.getClientY() < 370) {
+                    clientY = 370;
+                }
+                else if (event.getClientY() > 530) {
+                    clientY = 530;
+                }
+                else {
+                    clientY = event.getClientY();
+                }
+                Slider_AltBar.getOverlayXY().setY(clientY - 4);
+                var up = parseInt((526 - Slider_AltBar.getOverlayXY().getY()) / 160 * 100);
+                document.getElementById("currentup").value = up;
+                ge.getOptions().setMouseNavigationEnabled(0);
+            }
+        }
+        //竖直方向抬升的屏幕叠加层mouse move 事件
+        var SliderMouseMove = function (event) {
+            if (Slider_AltBarActive == true) {
+                var clientY;
+                if (event.getClientY() < 370) {
+                    clientY = 370;
+                }
+                else if (event.getClientY() > 530) {
+                    clientY = 530;
+                }
+                else {
+                    clientY = event.getClientY();
+                }
+                Slider_AltBar.getOverlayXY().setY(clientY - 4);
+                var up = parseInt((526 - Slider_AltBar.getOverlayXY().getY()) / 160 * 100);
+                document.getElementById("currentup").value = up;
+            }
+        }
+        //竖直方向抬升的屏幕叠加层mouseup事件
+        var SliderMouseUp = function (event) {
+            //alert("mouse up1");
+            if (Slider_AltBarActive == true) {
+                ge.getOptions().setMouseNavigationEnabled(1);
+                 
+                 Uplift();
+                 //alert("放开 地壳");
+                 
+                Slider_AltBarActive = false;
+
+                //keyUp();
+            }
+        }
+
+
+
+
+        function keyUp(event) {
+            if (event.keyCode == 13) {//判断是否按了回车键
+                leftUp = parseInt(document.getElementById("currentup").value);
+
+
+                if (leftUp < 0 )
+                {
+                      alert("Minimum/maximum range of the displacement：0 - 100 Km.Don't less than 0!");
+                      leftUp = 0;
+                }
+                if (leftUp > 100)
+                {
+                     alert("Minimum/maximum range of the displacement：0 - 100 Km.Don't exceed 100 km!");
+                     leftUp = 100;
+                }
+
+                
+                if (leftUp >= 0 && leftUp <= 100) {//判断输入的是否为0-100之间的数字。
+                    document.getElementById("currentup").value = leftUp;
+                    var setY = 526 - leftUp * 160 / 100;
+                    
+                    Slider_AltBar.getOverlayXY().setY(setY);
+                    // Slider_AltBarActive = true; 
+                     // SliderMouseUp(); 
+                    Uplift();
+                   
+                }
+                else {
+                    alert("Minimum/maximum range of the displacement：0 - 100 Km.DO NOT EXCEED 100 km!");
+                }
+               
+                //document.getElementById("enter").click();
+                return;
+            }
+        }
+
+
+    function showCrust10() 
+     {
+            if (document.getElementById('showCrust10').checked == true) {
+                ge.getOptions().setOverviewMapVisibility(true);
+                 networkLink1.setVisibility(true);              
+
+            } else if (document.getElementById('showCrust10').checked == false) {
+                 networkLink1.setVisibility(false);
+            }
+      }
+
+
+     function showGrid() 
+     {
+            if (document.getElementById('showGrid').checked == true) {
+                ge.getOptions().setGridVisibility(true);
+
+            } else if (document.getElementById('showGrid').checked == false) {
+                ge.getOptions().setGridVisibility(false);
+            }
+      }
+
+     function showOverview() 
+     {
+            if (document.getElementById('showOverview').checked == true) {
+                ge.getOptions().setOverviewMapVisibility(true);
+
+            } else if (document.getElementById('showOverview').checked == false) {
+                ge.getOptions().setOverviewMapVisibility(false);
+            }
+      }
+           
+           
+    </script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66370743-2', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+
+<body>
+
+          <div id="mainhead" align="center" >
+		  <div id="head">
+             <div id="title" style="float:left;clear:left; margin-top:0px">
+              <h3>
+	         <font> VisualCrust: Visualizing the global crustal structure (from </font><a href="http://igppweb.ucsd.edu/~gabi/crust1.html" target="_blank"><font color="blue">CRUST 1.0</font></a><font>) on the Google Earth virtual globe -- </font>                 
+                 <a href="help/instructionguide.pdf" target="_blank"><font color="blue">Instruction Guide&nbsp&nbsp</font></a>
+              </h3>
+             </div> 
+         
+              <div id="left" style="float:left;clear:left; margin-bottom:3px">
+             Elevate the crust: <input type="text" id="currentup" value='80' style="width:50px" onkeyup="keyUp(event)" /> km
+
+			 <input type="checkbox" id="showCrust10"
+	    name="showCrust10" style="margin-left: 20px;" checked=true onclick="showCrust10();"/>
+           <span><font>Global crustal structure</font></span>
+
+           <input type="checkbox" id="showGrid"
+	    name="showGrid" style="margin-left: 20px;" checked=true onclick="showGrid();"/>
+           <span><font>Grids</font></span>
+ 
+           <input type="checkbox" id="showOverview"
+	    name="showOverview" style="margin-left: 20px;" checked=true onclick="showOverview();"/>
+
+           <span><font>Overview map</font></span>
+           <span><font color="red" ><I>  Note: It may take several minutes to download models. Please wait until crustal models appear!</I></font></span>
+             </div>
+		</div>
+       </div>
+       <div id="main" align="center">
+		   
+				<div id="map3d">
+				</div>
+			
+       </div>
+
+
+</body>
+</html>
